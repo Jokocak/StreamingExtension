@@ -8,5 +8,5 @@
   - Harrison Hubbard (harrisoncodehub) 
   - Alexander Johnston (ajohn432)
   - Karan Bhatt (karannbhatt)
-  - name (github id)
+  - David Mond (savageace9)
 - For more information about how this application works, and the functionality behind it, visit our [**wiki**](https://github.com/muksaw/StreamingExtension/wiki).
