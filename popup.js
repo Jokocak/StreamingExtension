@@ -1,28 +1,20 @@
-document.addEventListener('DOMContentLoaded', () => {
-    chrome.storage.local.get(['twitch_token'], (result) => {
-      if (result.twitch_token) {
-        fetchLiveStreamers(result.twitch_token);
+document.getElementById('loginButton').addEventListener('click', function() {
+  chrome.identity.launchWebAuthFlow({
+    'url': `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=aitzxubiftictbsri53s7fe77klatu&redirect_uri=https://hhihnnhihneiplcdlmmeejmaafcappig.chromiumapp.org&scope=user:read:follows`,
+    'interactive': true
+  }, function(redirect_url) {
+    console.log('Redirect URL:', redirect_url);
+    if (chrome.runtime.lastError) {
+      console.error(chrome.runtime.lastError);
+    } else if (redirect_url) {
+      try {
+        const url = new URL(redirect_url);
+        const token = url.hash.match(/access_token=([^&]*)/)[1];
+        console.log('Access Token:', token);
+        // You can now use the token to make API calls to Twitch
+      } catch (error) {
+        console.error('Failed to extract access token:', error);
       }
-    });
+    }
   });
-  
-  function fetchLiveStreamers(token) {
-    fetch('https://api.twitch.tv/helix/streams/followed', {
-      headers: {
-        'Client-ID': 'YOUR_TWITCH_CLIENT_ID',
-        'Authorization': `Bearer ${token}`
-      }
-    })
-      .then(response => response.json())
-      .then(data => {
-        const streamers = data.data;
-        const list = document.getElementById('streamers');
-        streamers.forEach(streamer => {
-          const listItem = document.createElement('li');
-          listItem.textContent = `${streamer.user_name} is live with ${streamer.viewer_count} viewers`;
-          list.appendChild(listItem);
-        });
-      })
-      .catch(error => console.error('Error fetching live streamers:', error));
-  }
-  
+});

@@ -6,8 +6,8 @@
     "permissions": [
       "identity",
       "storage",
-      "https://id.twitch.tv/*",
-      "https://api.twitch.tv/*"
+      "notifications",
+      "alarms"
     ],
     "background": {
       "service_worker": "background.js"
@@ -26,11 +26,11 @@
       "128": "icons/icon128.png"
     },
     "oauth2": {
-      "client_id": "YOUR_TWITCH_CLIENT_ID",
+      "client_id": "aitzxubiftictbsri53s7fe77klatu",
       "scopes": [
         "user:read:follows"
       ],
-      "redirect_uri": "https://YOUR_EXTENSION_ID.chromiumapp.org"
+      "redirect_uri": "https://hhihnnhihneiplcdlmmeejmaafcappig.chromiumapp.org"
     }
   }
   
