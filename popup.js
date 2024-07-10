@@ -1,8 +1,8 @@
+// Gets token and uses it to fetch live streamers
 document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get(['twitch_token'], (result) => {
       console.log('Stored Token:', result.twitch_token);
       if (result.twitch_token) {
-          console.log('Meow');
           fetchLiveStreamers(result.twitch_token);
       } else {
           document.getElementById('streamers').textContent = 'No token found!';
@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Get User ID
+// Method fetches the current user's id
 async function getUserId(token, clientId) {
   try {
     const response = await fetch('https://api.twitch.tv/helix/users', {
@@ -34,7 +34,7 @@ async function getUserId(token, clientId) {
   }
 }
 
-// 
+// Method fetches live streamers and prints their data
 async function fetchLiveStreamers(token) {
   console.log('Fetching live streamers with token:', token);
   try {
@@ -55,6 +55,7 @@ async function fetchLiveStreamers(token) {
       throw new Error(`Failed to fetch followed streamers: ${response.statusText}`);
     }
 
+    // Format data
     const data = await response.json();
     console.log('Streamers data:', data);
     if (data.data && Array.isArray(data.data)) {
@@ -63,7 +64,7 @@ async function fetchLiveStreamers(token) {
       list.innerHTML = '';
       streamers.forEach(streamer => {
         const listItem = document.createElement('li');
-        listItem.textContent = `${streamer.to_name} is followed by ${streamer.from_name}`;
+        listItem.textContent = `${streamer.user_name} is live with ${streamer.viewer_count} viewers`;
         list.appendChild(listItem);
       });
     } else {
