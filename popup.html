@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Live Twitch Streamers</title>
-  <link rel="stylesheet" href="styles.css">
+    <title>Twitch Followed Streamers</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Live Twitch Streamers</h1>
-  <ul id="streamers"></ul>
-  <script src="popup.js"></script>
+    <div class="container">
+        <h1>Followed Streamers</h1>
+        <div class="login-container">
+            <button id="login-button">Login</button>
+        </div>
+        <ul id="streamers" style="display:none;">
+            <!-- Followed streamers will be displayed here -->
+        </ul>
+    </div>
+    <script src="popup.js"></script>
 </body>
 </html>
