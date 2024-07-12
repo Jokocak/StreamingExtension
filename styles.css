@@ -51,3 +51,25 @@ li span.viewer-count {
   color: #555;
   font-size: 16px;
 }
+
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px; /* Adjust height as needed */
+}
+
+#login-button {
+  background-color: #9146FF; /* Twitch brand color */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+#login-button:hover {
+  background-color: #772CE8;
+}

@@ -1,77 +1,103 @@
-// Gets token and uses it to fetch live streamers
 document.addEventListener('DOMContentLoaded', () => {
-  chrome.storage.local.get(['twitch_token'], (result) => {
-      console.log('Stored Token:', result.twitch_token);
-      if (result.twitch_token) {
-          fetchLiveStreamers(result.twitch_token);
-      } else {
-          document.getElementById('streamers').textContent = 'No token found!';
-      }
-  });
+    // Clear the stored token on load
+    chrome.storage.local.remove('twitch_token', () => {
+        console.log('Stored token cleared');
+        const loginContainer = document.querySelector('.login-container');
+        const loginButton = document.getElementById('login-button');
+        
+        loginButton.style.display = 'block';
+        loginContainer.style.display = 'flex';
+        
+        loginButton.addEventListener('click', () => {
+            authenticateUser();
+        });
+    });
 });
+
+function authenticateUser() {
+    const clientId = 'aitzxubiftictbsri53s7fe77klatu';
+    const redirectUri = chrome.identity.getRedirectURL();
+    const encodedRedirectUri = encodeURIComponent(redirectUri);
+
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=token&scope=user:read:follows`;
+
+    chrome.identity.launchWebAuthFlow(
+        {
+            url: authUrl,
+            interactive: true
+        },
+        (redirect_url) => {
+            if (chrome.runtime.lastError || redirect_url.includes('error')) {
+                document.getElementById('streamers').textContent = 'User did not login';
+                return;
+            }
+            const tokenMatch = redirect_url.match(/access_token=([^&]*)/);
+            if (tokenMatch && tokenMatch[1]) {
+                const token = tokenMatch[1];
+                chrome.storage.local.set({ twitch_token: token }, () => {
+                    const loginContainer = document.querySelector('.login-container');
+                    loginContainer.style.display = 'none';
+                    fetchLiveStreamers(token);
+                });
+            } else {
+                document.getElementById('streamers').textContent = 'Token not found in redirect URL';
+            }
+        }
+    );
+}
 
 // Method fetches the current user's id
 async function getUserId(token, clientId) {
-  try {
-      const response = await fetch('https://api.twitch.tv/helix/users', {
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Client-Id': clientId
-          }
-      });
+    try {
+        const response = await fetch('https://api.twitch.tv/helix/users', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': clientId
+            }
+        });
 
-      // Check for error
-      if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const data = await response.json();
-
-      return data.data[0].id; // User ID
-  } catch (error) {
-      console.error('Error fetching User ID:', error);
-      document.getElementById('streamers').textContent = 'Error fetching User ID';
-  }
+        const data = await response.json();
+        return data.data[0].id;
+    } catch (error) {
+        console.error('Error fetching User ID:', error);
+        document.getElementById('streamers').textContent = 'Error fetching User ID';
+    }
 }
 
 // Method fetches live streamers and prints their data
 async function fetchLiveStreamers(token) {
-  console.log('Fetching live streamers with token:', token);
-  try {
-      // Fetch User ID
-      const userId = await getUserId(token, 'aitzxubiftictbsri53s7fe77klatu');
-      console.log('UserId: ', userId);
+    try {
+        const userId = await getUserId(token, 'aitzxubiftictbsri53s7fe77klatu');
+        const response = await fetch(`https://api.twitch.tv/helix/streams/followed?user_id=${userId}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-ID': 'aitzxubiftictbsri53s7fe77klatu'
+            }
+        });
 
-      // Fetch streamers
-      const response = await fetch(`https://api.twitch.tv/helix/streams/followed?user_id=${userId}`, {
-          headers: {
-              'Authorization': `Bearer ${token}`,
-              'Client-ID': 'aitzxubiftictbsri53s7fe77klatu'
-          }
-      });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch followed streamers: ${response.statusText}`);
+        }
 
-      // Check if fail to grab streamers
-      if (!response.ok) {
-          throw new Error(`Failed to fetch followed streamers: ${response.statusText}`);
-      }
-
-      // Format data
-      const data = await response.json();
-      console.log('Streamers data:', data);
-      const list = document.getElementById('streamers');
-      list.innerHTML = '';
-      if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-          const streamers = data.data;
-          streamers.forEach(streamer => {
-              const listItem = document.createElement('li');
-              listItem.innerHTML = `<span class="streamer-name">${streamer.user_name}</span><span class="viewer-count">${streamer.viewer_count} viewers</span>`;
-              list.appendChild(listItem);
-          });
-      } else {
-          list.textContent = 'There are currently no streamers live.';
-      }
-  } catch (error) {
-      console.error('Error fetching live streamers:', error);
-      document.getElementById('streamers').textContent = 'Error fetching live streamers';
-  }
+        const data = await response.json();
+        const list = document.getElementById('streamers');
+        list.innerHTML = '';
+        list.style.display = 'block';
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+            data.data.forEach(streamer => {
+                const listItem = document.createElement('li');
+                listItem.innerHTML = `<span class="streamer-name">${streamer.user_name}</span><span class="viewer-count">${streamer.viewer_count} viewers</span>`;
+                list.appendChild(listItem);
+            });
+        } else {
+            list.textContent = 'There are currently no streamers live.';
+        }
+    } catch (error) {
+        console.error('Error fetching live streamers:', error);
+        document.getElementById('streamers').textContent = 'Error fetching live streamers';
+    }
 }
