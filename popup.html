@@ -7,12 +7,41 @@
 <body>
     <div class="container">
         <h1>Followed Streamers</h1>
-        <div class="login-container">
-            <button id="login-button">Login</button>
+        <div class="tab-container">
+            <button class="tab-button" data-tab="twitch">
+                <img src="icons/twitch-logo.png" alt="Twitch" class="tab-logo">
+            </button>
+            <button class="tab-button" data-tab="kick">
+                <img src="icons/kick-logo.png" alt="Kick" class="tab-logo">
+            </button>
+            <button class="tab-button" data-tab="youtube">
+                <img src="icons/youtube-logo.png" alt="YouTube" class="tab-logo">
+            </button>
         </div>
-        <ul id="streamers" style="display:none;">
-            <!-- Followed streamers will be displayed here -->
-        </ul>
+        <div id="twitch" class="tab-content">
+            <div class="login-container">
+                <button id="twitch-login-button">Login</button>
+            </div>
+            <ul id="twitch-streamers" style="display:none;">
+                <!-- Followed streamers will be displayed here -->
+            </ul>
+        </div>
+        <div id="kick" class="tab-content">
+            <div class="login-container">
+                <button id="kick-login-button">Login</button>
+            </div>
+            <ul id="kick-streamers" style="display:none;">
+                <!-- Followed streamers will be displayed here -->
+            </ul>
+        </div>
+        <div id="youtube" class="tab-content">
+            <div class="login-container">
+                <button id="youtube-login-button">Login</button>
+            </div>
+            <ul id="youtube-streamers" style="display:none;">
+                <!-- Followed streamers will be displayed here -->
+            </ul>
+        </div>
     </div>
     <script src="popup.js"></script>
 </body>
