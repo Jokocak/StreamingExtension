@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     switchTab('twitch'); // Default to Twitch tab
+    checkAuthenticationStatus(); // Check if the user is already authenticated
 });
 
 function setupLoginButton(buttonId, callback) {
@@ -68,11 +69,12 @@ function authenticateUser() {
             if (tokenMatch && tokenMatch[1]) {
                 const token = tokenMatch[1];
                 chrome.storage.local.set({ twitch_token: token }, () => {
-                    const loginContainer = document.querySelector('.login-container');
-                    loginContainer.style.height = '0';
-                    loginContainer.style.marginBottom = '0';
-                    loginContainer.innerHTML = ''; // Remove the login button from the DOM
-                    fetchLiveStreamers(token);
+                    fetchUserDetails(token).then(userName => {
+                        chrome.storage.local.set({ twitch_user_name: userName }, () => {
+                            fetchLiveStreamers(token);
+                            updateUIAfterLogin(userName);
+                        });
+                    });
                 });
             } else {
                 document.getElementById('twitch-streamers').textContent = 'Token not found in redirect URL';
@@ -81,9 +83,64 @@ function authenticateUser() {
     );
 }
 
+function updateUIAfterLogin(userName) {
+    fetchLiveStreamers();
+
+    const loginContainer = document.querySelector('.login-container');
+    loginContainer.innerHTML = ''; // Clear the login container
+
+    const streamersContainer = document.querySelector('#twitch');
+    streamersContainer.insertAdjacentHTML('afterbegin', `
+        <div id="logout-container">
+            <span id="signed-in-message">Signed in as ${userName}</span>
+            <button id="logout-button">Logout</button>
+        </div>
+    `);
+
+    const logoutButton = document.getElementById('logout-button');
+    logoutButton.addEventListener('click', logoutUser);
+}
+
+function checkAuthenticationStatus() {
+    chrome.storage.local.get(['twitch_token', 'twitch_user_name'], (data) => {
+        if (data.twitch_token) {
+            updateUIAfterLogin(data.twitch_user_name);
+        }
+    });
+}
+
+function logoutUser() {
+    chrome.storage.local.remove(['twitch_token', 'twitch_user_name'], () => {
+        location.reload(); // Reload the popup to reset the UI
+    });
+}
+
 // Placeholder function for Kick and YouTube login buttons
 function placeholderFunction() {
     alert('Login functionality for Kick and YouTube is not yet implemented.');
+}
+
+// Method fetches the current user's details
+async function fetchUserDetails(token) {
+    const clientId = 'aitzxubiftictbsri53s7fe77klatu';
+    try {
+        const response = await fetch('https://api.twitch.tv/helix/users', {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Client-Id': clientId
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.data[0].display_name;
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        document.getElementById('twitch-streamers').textContent = 'Error fetching user details';
+    }
 }
 
 // Method fetches the current user's id
@@ -109,8 +166,10 @@ async function getUserId(token, clientId) {
 }
 
 // Method fetches live streamers and prints their data
-async function fetchLiveStreamers(token) {
+async function fetchLiveStreamers() {
     try {
+        const tokenData = await chrome.storage.local.get('twitch_token');
+        const token = tokenData.twitch_token;
         const userId = await getUserId(token, 'aitzxubiftictbsri53s7fe77klatu');
         const response = await fetch(`https://api.twitch.tv/helix/streams/followed?user_id=${userId}`, {
             headers: {
@@ -161,7 +220,6 @@ async function fetchLiveStreamers(token) {
     }
 }
 
-
 function calculateElapsedTime(startTime) {
     const start = new Date(startTime);
     const now = new Date();
@@ -182,6 +240,3 @@ function startUpdatingElapsedTime() {
         });
     }, 1000); // Update every second
 }
-
-// Logout Button
-// ..

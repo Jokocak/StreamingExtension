@@ -90,9 +90,9 @@ li .stream-info .viewer-count.twitch-viewer-count {
 
 .login-container {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  height: 100px; /* Adjust height as needed */
+  height: auto; /* Adjust height to auto */
   transition: height 0.3s, margin-bottom 0.3s;
 }
 
@@ -177,6 +177,37 @@ li .stream-info .viewer-count.twitch-viewer-count {
 
 .stream-link:hover {
   background-color: #ddd; /* Slightly darker background color on hover */
+}
+
+#logout-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-bottom: 1px solid #ddd;
+  margin-bottom: 10px; /* Add margin-bottom */
+}
+
+#signed-in-message {
+  font-size: 16px;
+  color: #333;
+}
+
+#logout-button {
+  background-color: #9146FF;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+#logout-button:hover {
+  background-color: #772CE8;
 }
 
 /* New CSS class for no streamers message */
