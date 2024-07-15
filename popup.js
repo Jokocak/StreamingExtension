@@ -109,9 +109,60 @@ function checkAuthenticationStatus() {
     });
 }
 
-function logoutUser() {
-    chrome.storage.local.remove(['twitch_token', 'twitch_user_name'], () => {
-        location.reload(); // Reload the popup to reset the UI
+async function logoutUser() {
+    const tokenData = await chrome.storage.local.get('twitch_token');
+    const token = tokenData.twitch_token;
+
+    if (token) {
+        // Revoke the token
+        await revokeToken(token);
+
+        // Clear Twitch cookies
+        clearTwitchCookies();
+
+        // Remove the token and user information from local storage
+        chrome.storage.local.remove(['twitch_token', 'twitch_user_name'], () => {
+            location.reload(); // Reload the popup to reset the UI
+        });
+    }
+}
+
+// Function to revoke the token
+async function revokeToken(token) {
+    const clientId = 'aitzxubiftictbsri53s7fe77klatu';
+    const url = 'https://id.twitch.tv/oauth2/revoke';
+    const params = new URLSearchParams();
+    params.append('client_id', clientId);
+    params.append('token', token);
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to revoke token: ${response.statusText}`);
+        }
+    } catch (error) {
+        console.error('Error revoking token:', error);
+    }
+}
+
+// Function to clear Twitch cookies
+function clearTwitchCookies() {
+    const domains = ['.twitch.tv', 'twitch.tv'];
+    const cookieStore = chrome.cookies;
+
+    domains.forEach(domain => {
+        cookieStore.getAll({ domain }, (cookies) => {
+            cookies.forEach(cookie => {
+                cookieStore.remove({ url: `https://${domain}${cookie.path}`, name: cookie.name });
+            });
+        });
     });
 }
 

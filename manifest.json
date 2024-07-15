@@ -7,13 +7,18 @@
     "identity",
     "storage",
     "notifications",
-    "alarms"
+    "alarms",
+    "cookies",
+    "identity.email"
+  ],
+  "host_permissions": [
+    "https://*.twitch.tv/*"
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_icon": { 
+    "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
