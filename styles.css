@@ -186,4 +186,7 @@ li .stream-info .viewer-count.twitch-viewer-count {
   font-weight: bold;
   text-align: center;
   margin-top: 20px;
+  background: none; /* Remove background */
+  padding: 0; /* Remove padding */
+  text-align: center; /* Center text */
 }

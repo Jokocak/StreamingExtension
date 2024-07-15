@@ -182,3 +182,6 @@ function startUpdatingElapsedTime() {
         });
     }, 1000); // Update every second
 }
+
+// Logout Button
+// ..
