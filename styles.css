@@ -183,11 +183,12 @@ li .stream-info .viewer-count.twitch-viewer-count {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: 100%;
+  width: calc(100% - 20px); /* Adjust the width to be consistent with the stream widgets */
+  margin: 0 auto 10px auto; /* Center the logout container and add bottom margin */
   padding: 10px;
   background-color: #f9f9f9;
   border-bottom: 1px solid #ddd;
-  margin-bottom: 10px; /* Add margin-bottom */
+  border-radius: 5px;
 }
 
 #signed-in-message {
