@@ -178,3 +178,12 @@ li .stream-info .viewer-count.twitch-viewer-count {
 .stream-link:hover {
   background-color: #ddd; /* Slightly darker background color on hover */
 }
+
+/* New CSS class for no streamers message */
+.no-streamers-message {
+  font-size: 16px;
+  color: #555;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 20px;
+}

@@ -147,13 +147,20 @@ async function fetchLiveStreamers(token) {
             });
             startUpdatingElapsedTime();
         } else {
-            list.textContent = 'There are currently no streamers live.';
+            const noStreamersMessage = document.createElement('li');
+            noStreamersMessage.className = 'no-streamers-message';
+            noStreamersMessage.textContent = 'There are currently no streamers live.';
+            list.appendChild(noStreamersMessage);
         }
     } catch (error) {
         console.error('Error fetching live streamers:', error);
-        document.getElementById('twitch-streamers').textContent = 'Error fetching live streamers';
+        const errorMessage = document.createElement('li');
+        errorMessage.className = 'no-streamers-message';
+        errorMessage.textContent = 'Error fetching live streamers';
+        document.getElementById('twitch-streamers').appendChild(errorMessage);
     }
 }
+
 
 function calculateElapsedTime(startTime) {
     const start = new Date(startTime);
