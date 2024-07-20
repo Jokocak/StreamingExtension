@@ -1,9 +1,11 @@
+// Start up script
 document.addEventListener('DOMContentLoaded', () => {
     // Setup the login button event listeners
-    setupLoginButton('twitch-login-button', authenticateUser);
+    setupLoginButton('twitch-login-button', authenticateUserTwitch);
+    setupLoginButton('youtube-login-button', authenticateUserYoutube);
     setupLoginButton('kick-login-button', placeholderFunction);
-    setupLoginButton('youtube-login-button', placeholderFunction);
-
+    
+    // Sets up different tabs for Twitch, Youtube, and Kick
     const tabs = document.querySelectorAll('.tab-button');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAuthenticationStatus(); // Check if the user is already authenticated
 });
 
+// Displays login button if not logged in on the current tab
 function setupLoginButton(buttonId, callback) {
     const loginButton = document.getElementById(buttonId);
     if (loginButton) {
@@ -23,6 +26,7 @@ function setupLoginButton(buttonId, callback) {
     }
 }
 
+// Implements tab switching functionality
 function switchTab(tabName) {
     const tabs = document.querySelectorAll('.tab-button');
     tabs.forEach(tab => {
@@ -48,7 +52,8 @@ function switchTab(tabName) {
     }
 }
 
-function authenticateUser() {
+// Authenticates user for Twitch account
+function authenticateUserTwitch() {
     const clientId = 'aitzxubiftictbsri53s7fe77klatu';
     const redirectUri = chrome.identity.getRedirectURL();
     const encodedRedirectUri = encodeURIComponent(redirectUri);
@@ -71,7 +76,7 @@ function authenticateUser() {
                 chrome.storage.local.set({ twitch_token: token }, () => {
                     fetchUserDetails(token).then(userName => {
                         chrome.storage.local.set({ twitch_user_name: userName }, () => {
-                            fetchLiveStreamers(token);
+                            fetchTwitchLiveStreamers(token);
                             updateUIAfterLogin(userName);
                         });
                     });
@@ -83,8 +88,9 @@ function authenticateUser() {
     );
 }
 
+// This function updates the UI after the user logs in
 function updateUIAfterLogin(userName) {
-    fetchLiveStreamers();
+    fetchTwitchLiveStreamers();
 
     const loginContainer = document.querySelector('.login-container');
     loginContainer.innerHTML = ''; // Clear the login container
@@ -101,6 +107,7 @@ function updateUIAfterLogin(userName) {
     logoutButton.addEventListener('click', logoutUser);
 }
 
+// This function ensures that the user is authenticated
 function checkAuthenticationStatus() {
     chrome.storage.local.get(['twitch_token', 'twitch_user_name'], (data) => {
         if (data.twitch_token) {
@@ -109,6 +116,8 @@ function checkAuthenticationStatus() {
     });
 }
 
+// This function logs out the user and clears the cookies related to Twitch so
+// the previous account is not remembered
 async function logoutUser() {
     const tokenData = await chrome.storage.local.get('twitch_token');
     const token = tokenData.twitch_token;
@@ -166,9 +175,9 @@ function clearTwitchCookies() {
     });
 }
 
-// Placeholder function for Kick and YouTube login buttons
+// Placeholder function for Kick login button
 function placeholderFunction() {
-    alert('Login functionality for Kick and YouTube is not yet implemented.');
+    alert('Login functionality for Kick is not yet implemented.');
 }
 
 // Method fetches the current user's details
@@ -216,8 +225,8 @@ async function getUserId(token, clientId) {
     }
 }
 
-// Method fetches live streamers and prints their data
-async function fetchLiveStreamers() {
+// This method fetches the Twitch live streamers and prints their data
+async function fetchTwitchLiveStreamers() {
     try {
         const tokenData = await chrome.storage.local.get('twitch_token');
         const token = tokenData.twitch_token;
@@ -271,6 +280,153 @@ async function fetchLiveStreamers() {
     }
 }
 
+
+// ** YOUTUBE CODE START **
+
+// Authenticates user for Youtube Account
+function authenticateUserYoutube() {
+    const clientId = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com'; // ** YOUTUBE / GOOGLE CLIENT ID **
+    const redirectUri = chrome.identity.getRedirectURL();
+    const scope = 'https://www.googleapis.com/auth/youtube.readonly';
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+
+    chrome.identity.launchWebAuthFlow(
+        {
+            url: authUrl,
+            interactive: true
+        },
+        (redirect_url) => {
+            if (chrome.runtime.lastError || redirect_url.includes('error')) {
+                document.getElementById('youtube-streamers').textContent = 'User did not login';
+                return;
+            }
+            const tokenMatch = redirect_url.match(/access_token=([^&]*)/);
+            if (tokenMatch && tokenMatch[1]) {
+                const token = tokenMatch[1];
+                chrome.storage.local.set({ youtube_token: token }, () => {
+                    fetchYouTubeUserDetails(token).then(userName => {
+                        chrome.storage.local.set({ youtube_user_name: userName }, () => {
+                            fetchYouTubeLiveStreamers(token);
+                            updateYouTubeUIAfterLogin(userName);
+                        });
+                    });
+                });
+            } else {
+                document.getElementById('youtube-streamers').textContent = 'Token not found in redirect URL';
+            }
+        }
+    );
+}
+
+// Gets Youtuber Details
+async function fetchYouTubeUserDetails(token) {
+    try {
+        const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.name; // You can also use data.email or other fields as needed
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        document.getElementById('youtube-streamers').textContent = 'Error fetching user details';
+    }
+}
+
+// Fetches Live Streamers on Youtube
+async function fetchYouTubeLiveStreamers(token) {
+    try {
+        const response = await fetch('https://www.googleapis.com/youtube/v3/subscriptions?part=snippet&mine=true', {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch subscriptions: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        const subscriptions = data.items;
+        const liveStreamers = await getLiveStreamers(subscriptions, token);
+        displayYouTubeLiveStreamers(liveStreamers);
+    } catch (error) {
+        console.error('Error fetching live streamers:', error);
+        const errorMessage = document.createElement('li');
+        errorMessage.className = 'no-streamers-message';
+        errorMessage.textContent = 'Error fetching live streamers';
+        document.getElementById('youtube-streamers').appendChild(errorMessage);
+    }
+}
+
+// Gets the subscriptions and checks if they are live streaming
+async function getLiveStreamers(subscriptions, token) {
+    const liveStreamers = [];
+    for (const sub of subscriptions) {
+        const channelId = sub.snippet.resourceId.channelId;
+        const response = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            continue;
+        }
+
+        const data = await response.json();
+        if (data.items && data.items.length > 0) {
+            liveStreamers.push({
+                channelName: sub.snippet.title,
+                liveStreamTitle: data.items[0].snippet.title,
+                liveStreamId: data.items[0].id.videoId
+            });
+        }
+    }
+    return liveStreamers;
+}
+
+// Displays the Youtube Live Streamers in a list
+function displayYouTubeLiveStreamers(liveStreamers) {
+    const list = document.getElementById('youtube-streamers');
+    list.innerHTML = '';
+    if (liveStreamers.length > 0) {
+        liveStreamers.forEach(streamer => {
+            const listItem = document.createElement('li');
+            listItem.innerHTML = `
+                <a href="https://www.youtube.com/watch?v=${streamer.liveStreamId}" target="_blank" class="stream-link">
+                    <div class="stream-info">
+                        <span class="streamer-name">${streamer.channelName}</span>
+                        <span class="stream-title">${streamer.liveStreamTitle}</span>
+                    </div>
+                </a>`;
+            list.appendChild(listItem);
+        });
+    } else {
+        const noStreamersMessage = document.createElement('li');
+        noStreamersMessage.className = 'no-streamers-message';
+        noStreamersMessage.textContent = 'There are currently no live streams.';
+        list.appendChild(noStreamersMessage);
+    }
+}
+
+// ** YOUTUBE CODE END **
+
+// ** KICK CODE START **
+
+// TODO
+
+// ** KICK CODE END **
+
+// ** MISCELLANEOUS CODE **
+
+// Debug Function
 function calculateElapsedTime(startTime) {
     const start = new Date(startTime);
     const now = new Date();
@@ -281,6 +437,7 @@ function calculateElapsedTime(startTime) {
     return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 }
 
+// Debug Function
 function startUpdatingElapsedTime() {
     setInterval(() => {
         const listItems = document.querySelectorAll('#twitch-streamers li');
