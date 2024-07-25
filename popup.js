@@ -283,6 +283,82 @@ async function fetchTwitchLiveStreamers() {
 
 // ** YOUTUBE CODE START **
 
+// *** TEST
+
+// function authenticateUserYoutube() {
+//     const CLIENT_ID = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com';
+//     const DISCOVERY_DOCS = 'https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest';
+//     const SCOPES = 'https://www.google.apis.com/auth/youtube';
+
+//     alert('I WAS HERE.');
+
+//     handleClientLoad();
+
+//     alert('I WAS HERE TOO.');
+// }
+
+// // function myAuthentication() {
+// //     const CLIENT_ID = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com';
+// //     const DISCOVERY_DOCS = 'https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest';
+// //     const SCOPES = 'https://www.google.apis.com/auth/youtube';
+
+// //     const authorizeButton = document.getElementById('authorize-button');
+// //     const signoutButton = document.getElementById('signout-button');
+// //     const content = document.getElementById('content');
+
+// // }
+
+// // Load auth2 library
+// function handleClientLoad() {
+//     gapi.load('client:auth2', initClient);
+//     gapi.auth2.getAuthInstance().signIn();
+// }
+
+// // Initialize API client library and set up sign in listeners
+// function initClient() {
+//     gapi.client.init({
+//         discoverDocs: DISCOVERY_DOCS,
+//         clientId: CLIENT_ID,
+//         scope: SCOPES
+//     }).then(() => {
+//         // // Listen for sign in state changes
+//         // gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+//         // // Handle initial sign in state
+//         // updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+
+//         // 
+//         // authorizeButton.onclick = handleAuthClick;
+//         // signoutButton.onclick = handleSignoutClick;
+//     });
+// }
+
+// // Update UI Sign in state changes
+// function updateSigninStatus(isSignedIn) {
+//     if (isSignedIn) {
+//         // ...
+//     } else {
+//         // ...
+//     }
+// }
+
+// // Handle login
+// function handleAuthClick() {
+//     gapi.auth2.getAuthInstance().signIn();
+// }
+
+// // Handle logout
+// function handleSignoutClick() {
+//     gapi.auth2.getAuthInstance().signOut();
+// }
+
+// // Get Streamers
+// function getChannel(channel) {
+
+// }
+
+// *** TEST
+
 // Authenticates user for Youtube Account
 function authenticateUserYoutube() {
     const clientId = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com'; // ** YOUTUBE / GOOGLE CLIENT ID **
