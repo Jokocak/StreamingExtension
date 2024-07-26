@@ -286,12 +286,11 @@ function calculateElapsedTime(startTime) {
 
 // Authenticates user for YouTube account
 function authenticateUserYoutube() {
-    // const clientId = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com';
     const clientId = '321381782965-c82hpc02gof5vemrqkrlia82irspsijb.apps.googleusercontent.com';
     const redirectUri = chrome.identity.getRedirectURL();
     const encodedRedirectUri = encodeURIComponent(redirectUri);
 
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=token&scope=https://www.googleapis.com/auth/youtube.readonly`;
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=token&scope=https://www.googleapis.com/auth/youtube`;
 
     chrome.identity.launchWebAuthFlow(
         {
@@ -319,15 +318,58 @@ function authenticateUserYoutube() {
 // Fetches live streamers from YouTube
 async function fetchYoutubeLiveStreamers(token) {
     try {
-        const response = await fetch('https://www.googleapis.com/youtube/v3/liveBroadcasts?part=snippet&broadcastStatus=active&broadcastType=all', {
+        // Get logged in channel ID
+        const responseId = await fetch('https://www.googleapis.com/youtube/v3/channels?part=id&mine=true', {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`Failed to fetch YouTube live streamers: ${response.statusText}`);
+        // Check if response is ok
+        if (!responseId.ok) {
+            throw new Error(`Failed to fetch User channel ID: ${responseId.statusText}`);
         }
+
+        // Record channel ID
+        const responseIdData = await responseId.json();
+        const channelId = responseIdData.items[0].id;
+
+        // Debug Message
+        console.log('Grabbed user\'s channel id!');
+
+        // ** FIX OR ENCRYPT IN SOME WAY **
+        const API_KEY = 'AIzaSyAfTyBeQEeFq_7lrUdDdCJJlWUy0YvQ_PA';
+
+        // Get Subscriptions using grabbed logged in user's channel id
+        const response = await fetch(`https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet%2CcontentDetails&channelId=${channelId}&key=${API_KEY}`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        // Check if response is ok
+        if (!response.ok) {
+            throw new Error(`Failed to fetch User's subscribed channels: ${responseSubs.statusText}`);
+        }
+
+        // Debug Message
+        console.log('Grabbed subscribed accounts!');
+
+        // ** Grab Live Broadcasts - TODO **
+        // Format for grabbing live broadcasts api endpoint
+        // const responseLive = await fetch(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&maxResults=1`, {
+        //     headers: {
+        //         'Authorization': `Bearer ${token}`
+        //     }
+        // });
+
+        // Check if response is ok
+        // if (!response.ok) {
+        //     throw new Error(`Failed to fetch YouTube live streamers: ${responseLive.statusText}`);
+        // }
+
+        // Debug Message
+        // console.log('Grabbed streaming accounts!');
 
         const data = await response.json();
         const list = document.getElementById('youtube-streamers');
@@ -354,5 +396,3 @@ async function fetchYoutubeLiveStreamers(token) {
         document.getElementById('youtube-streamers').textContent = 'Error fetching YouTube live streamers';
     }
 }
-
-// AIzaSyAfTyBeQEeFq_7lrUdDdCJJlWUy0YvQ_PA
