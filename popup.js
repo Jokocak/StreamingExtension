@@ -282,9 +282,12 @@ function calculateElapsedTime(startTime) {
     return `${hours}h ${minutes}m ${seconds}s`;
 }
 
+
+
 // Authenticates user for YouTube account
 function authenticateUserYoutube() {
-    const clientId = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com';
+    // const clientId = '321381782965-il338g5uvfo9b5uls732r6aupu6jd5l5.apps.googleusercontent.com';
+    const clientId = '321381782965-c82hpc02gof5vemrqkrlia82irspsijb.apps.googleusercontent.com';
     const redirectUri = chrome.identity.getRedirectURL();
     const encodedRedirectUri = encodeURIComponent(redirectUri);
 
