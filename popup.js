@@ -318,6 +318,9 @@ function authenticateUserYoutube() {
 // Fetches live streamers from YouTube
 async function fetchYoutubeLiveStreamers(token) {
     try {
+        // ** FIX OR ENCRYPT IN SOME WAY **
+        const API_KEY = 'AIzaSyAfTyBeQEeFq_7lrUdDdCJJlWUy0YvQ_PA';
+
         // Get logged in channel ID
         const responseId = await fetch('https://www.googleapis.com/youtube/v3/channels?part=id&mine=true', {
             headers: {
@@ -337,9 +340,6 @@ async function fetchYoutubeLiveStreamers(token) {
         // Debug Message
         console.log('Grabbed user\'s channel id!');
 
-        // ** FIX OR ENCRYPT IN SOME WAY **
-        const API_KEY = 'AIzaSyAfTyBeQEeFq_7lrUdDdCJJlWUy0YvQ_PA';
-
         // Get Subscriptions using grabbed logged in user's channel id
         const response = await fetch(`https://youtube.googleapis.com/youtube/v3/subscriptions?part=snippet%2CcontentDetails&channelId=${channelId}&key=${API_KEY}`, {
             headers: {
@@ -352,39 +352,57 @@ async function fetchYoutubeLiveStreamers(token) {
             throw new Error(`Failed to fetch User's subscribed channels: ${responseSubs.statusText}`);
         }
 
-        // Debug Message
-        console.log('Grabbed subscribed accounts!');
-
-        // ** Grab Live Broadcasts - TODO **
-        // Format for grabbing live broadcasts api endpoint
-        // const responseLive = await fetch(`https://youtube.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&eventType=live&maxResults=1`, {
-        //     headers: {
-        //         'Authorization': `Bearer ${token}`
-        //     }
-        // });
-
-        // Check if response is ok
-        // if (!response.ok) {
-        //     throw new Error(`Failed to fetch YouTube live streamers: ${responseLive.statusText}`);
-        // }
+        // Extract channel IDs
+        const subscriptions = await response.json();
+        const channelIds = subscriptions.items.map(item => item.snippet.resourceId.channelId);
 
         // Debug Message
-        // console.log('Grabbed streaming accounts!');
+        console.log('Extracted Channel IDs:', channelIds);
 
-        const data = await response.json();
+        // Define async function to grab live stream
+        async function searchLiveStreams(channelId) {
+            const searchResponse = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&eventType=live&type=video&key=${API_KEY}`);
+
+            // Error check
+            if (!searchResponse.ok) {
+                throw new Error(`Failed to search for live streams: ${searchResponse.statusText}`);
+            }
+
+            // Return data
+            return await searchResponse.json();
+        }
+
+        // Search for each livestream with each channel id
+        const liveStreamsPromises = channelIds.map(channelId => searchLiveStreams(channelId));
+        const liveStreamsResults = await Promise.all(liveStreamsPromises);
+
+        // Flatten results and extract video details
+        const liveStreams = liveStreamsResults.flatMap(result => result.items);
+
+
+        // Print live streams
+        liveStreams.forEach(stream => {
+            console.log(`Title: ${stream.snippet.title}, URL: https://www.youtube.com/watch?v=${stream.id.videoId}`);
+        });
+
+        // Debug Message
+        console.log('Grabbed streaming accounts!');
+
+        // Update DOM with live streams
         const list = document.getElementById('youtube-streamers');
         list.innerHTML = '';
         list.style.display = 'block';
-        if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-            data.items.forEach(stream => {
+        if (liveStreams.length > 0) {
+            liveStreams.forEach(stream => {
                 const thumbnailUrl = stream.snippet.thumbnails.default.url;
                 const listItem = document.createElement('li');
                 listItem.innerHTML = 
-                    `<a href="https://www.youtube.com/watch?v=${stream.id}" target="_blank" class="stream-link">
+                    `<a href="https://www.youtube.com/watch?v=${stream.id.videoId}" target="_blank" class="stream-link">
                         <div class="thumbnail-container">
                             <img src="${thumbnailUrl}" alt="${stream.snippet.channelTitle} thumbnail" class="stream-thumbnail">
                         </div>
                         <span class="streamer-name">${stream.snippet.channelTitle}</span>
+                        <span class="stream-title">${stream.snippet.title}</span>
                     </a>`;
                 list.appendChild(listItem);
             });
