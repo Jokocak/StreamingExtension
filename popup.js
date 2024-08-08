@@ -109,7 +109,7 @@ function updateUIAfterLogin(userName) {
 // This function ensures that the user is authenticated
 function checkAuthenticationStatus() {
     chrome.storage.local.get(['twitch_token', 'twitch_user_name'], (data) => {
-        if (data.twitch_token) {
+        if (data.twitch_token && data.twitch_user_name) {
             updateUIAfterLogin(data.twitch_user_name);
         }
     });
