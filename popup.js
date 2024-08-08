@@ -1,10 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Setup the login button event listeners
     setupLoginButton('twitch-login-button', authenticateUserTwitch);
     setupLoginButton('youtube-login-button', authenticateUserYoutube);
     setupLoginButton('kick-login-button', placeholderFunction);
-    
-    // Sets up different tabs for Twitch, Youtube, and Kick
+
     const tabs = document.querySelectorAll('.tab-button');
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -12,9 +10,28 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    switchTab('twitch'); // Default to Twitch tab
-    checkAuthenticationStatus(); // Check if the user is already authenticated
+    switchTab('twitch');
+    checkAuthenticationStatus();
 });
+
+// Add this function to update stream uptime every second
+function updateStreamUptime() {
+    const streamTimes = document.querySelectorAll('.stream-time');
+    streamTimes.forEach(streamTime => {
+        let elapsedTime = parseInt(streamTime.dataset.elapsedTime, 10);
+        elapsedTime += 1;
+        streamTime.dataset.elapsedTime = elapsedTime;
+        streamTime.textContent = formatElapsedTime(elapsedTime);
+    });
+}
+
+// Format the elapsed time
+function formatElapsedTime(seconds) {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${hours}h ${minutes}m ${secs}s`;
+}
 
 // Displays login button if not logged in on the current tab
 function setupLoginButton(buttonId, callback) {
@@ -75,7 +92,7 @@ function authenticateUserTwitch() {
                 chrome.storage.local.set({ twitch_token: token }, () => {
                     fetchUserDetails(token).then(userName => {
                         chrome.storage.local.set({ twitch_user_name: userName }, () => {
-                            fetchTwitchLiveStreamers(token);
+                            fetchTwitchLiveStreamers();
                             updateUIAfterLogin(userName);
                         });
                     });
@@ -109,7 +126,7 @@ function updateUIAfterLogin(userName) {
 // This function ensures that the user is authenticated
 function checkAuthenticationStatus() {
     chrome.storage.local.get(['twitch_token', 'twitch_user_name'], (data) => {
-        if (data.twitch_token && data.twitch_user_name) {
+        if (data.twitch_token) {
             updateUIAfterLogin(data.twitch_user_name);
         }
     });
@@ -249,20 +266,29 @@ async function fetchTwitchLiveStreamers() {
             data.data.forEach(streamer => {
                 const thumbnailUrl = streamer.thumbnail_url.replace('{width}', '100').replace('{height}', '56');
                 const listItem = document.createElement('li');
+                const startedAt = new Date(streamer.started_at);
+                const now = new Date();
+                const elapsedTime = Math.floor((now - startedAt) / 1000); // Calculate initial elapsed time in seconds
                 listItem.dataset.startedAt = streamer.started_at; // Store start time in a data attribute
                 listItem.innerHTML = 
                     `<a href="https://www.twitch.tv/${streamer.user_name}" target="_blank" class="stream-link">
                         <div class="thumbnail-container">
                             <img src="${thumbnailUrl}" alt="${streamer.user_name} thumbnail" class="stream-thumbnail">
-                            <span class="stream-time">${calculateElapsedTime(streamer.started_at)}</span>
+                            <span class="stream-time" data-elapsed-time="${elapsedTime}">${formatElapsedTime(elapsedTime)}</span>
                         </div>
-                        <span class="streamer-name">${streamer.user_name}</span>
+                        <div class="stream-info">
+                            <span class="streamer-name">${streamer.user_name}</span>
+                            <span class="viewer-count twitch-viewer-count">${streamer.viewer_count} viewers</span>
+                        </div>
                     </a>`;
                 list.appendChild(listItem);
             });
         } else {
             list.innerHTML = '<li>No live streamers found</li>';
         }
+
+        // Update uptime every second
+        setInterval(updateStreamUptime, 1000);
     } catch (error) {
         console.error('Error fetching followed streamers:', error);
         document.getElementById('twitch-streamers').textContent = 'Error fetching followed streamers';
@@ -281,8 +307,6 @@ function calculateElapsedTime(startTime) {
 
     return `${hours}h ${minutes}m ${seconds}s`;
 }
-
-
 
 // Authenticates user for YouTube account
 function authenticateUserYoutube() {
@@ -349,7 +373,7 @@ async function fetchYoutubeLiveStreamers(token) {
 
         // Check if response is ok
         if (!response.ok) {
-            throw new Error(`Failed to fetch User's subscribed channels: ${responseSubs.statusText}`);
+            throw new Error(`Failed to fetch User's subscribed channels: ${response.statusText}`);
         }
 
         // Extract channel IDs
@@ -378,7 +402,6 @@ async function fetchYoutubeLiveStreamers(token) {
 
         // Flatten results and extract video details
         const liveStreams = liveStreamsResults.flatMap(result => result.items);
-
 
         // Print live streams
         liveStreams.forEach(stream => {
